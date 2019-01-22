@@ -9,7 +9,7 @@ local rxoc = require("rxoc")
 local lmnet = require("lmnet")
 
 local function receive()
-    return lmnet.receive(4000):filter(function(_, _, _, _, _, protocol)
+    return lmnet.receive():filter(function(_, _, _, _, _, protocol)
         --print("recieve filter", protocol)
         return protocol == "lmevent"
     end):map(function(_, _, _, _, _, _, sender, context, action, correlation, payload)
@@ -24,13 +24,14 @@ local function receive()
     end)
 end
 
--- send(receiver: string/UUID, message: any, protocol?: string, correlation?: string/UUID) : rx.Observable
-local function send(context, action, payload)
-    return _send(context, action, nil, payload)
+local function _send(context, action, correlation, payload)
+    --print("_send", context, action, correlation, payload)
+    return lmnet.send("lmevent", computer.address(), context, action, correlation, serialization.serialize(payload))
 end
 
-local function _send(context, action, correlation, payload)
-    return lmnet.broadcast(4000, "lmevent", computer.address(), context, action, correlation, serialization.serialize(payload))
+local function send(context, action, payload)
+    --print("send", context, action, payload, _send)
+    return _send(context, action, nil, payload)
 end
 
 local function request(context, action, payload)
@@ -51,4 +52,3 @@ return {
     request = request,
     respond = respond,
 }
-
